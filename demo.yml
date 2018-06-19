@@ -2,68 +2,58 @@
 
 - name: Create Deployment Configuration for Microservice
   hosts: all
-  become: true
-
-  vars:
-   workdir: /demo/deployment_config/envconfig/env_vars/
-   ansible_user: ansible
+  
   tasks:
-    
     - name: Check if Working Folder exist
       stat:
-       path: "{{ workdir }}"
+       path: "{{ target }}"
       register: workingDir
-    - debug:
-        msg: workingDir.exist
  
     - name: create folders for Environment
       file: 
-        path: "{{ workdir }}/{{ item }}"
+        path: "{{ target }}/{{ item.name }}"
         state: directory
         mode: 0755
-      with_items: "{{ myenv }}"
-      when: workingDir.stat.exists
+      with_items: "{{ environments }}"
 
     - name: create docker latest  tag folder 
       file: 
-        path: "{{ workdir }}/{{ item }}/latest_deployed_docker_image_tags"
+        path: "{{ target }}/{{ item.name }}/latest_deployed_docker_image_tags"
         state: directory
         mode: 0755
-      with_items: "{{ myenv }}"
-      when: workingDir.stat.exists
+      with_items: "{{ environments }}"
 
     - name: create docker override_var folder 
       file: 
-        path: "{{ workdir }}/{{ item }}/override_var"
+        path: "{{ target }}/{{ item.name }}/override_var"
         state: directory
         mode: 0755
-      with_items: "{{ myenv }}"
-      when: workingDir.stat.exists
+      with_items: "{{ environments }}"
 
     - name: copy microservice properties file for docker tag
       template: 
         src: micro-service-dockertag.properties.j2 
-        dest:  "{{ workdir }}/{{ item }}/latest_deployed_docker_image_tags/{{ servicename }}.properties"
-      with_items: "{{ myenv }}"
+        dest:  "{{ target }}/{{ item.name }}/latest_deployed_docker_image_tags/{{ servicename }}.properties"
+      with_items: "{{ environments }}"
     
     - name: copy microservice properties file for docker tag
       template: 
         src: micro-service-override.properties.j2
-        dest:  "{{ workdir }}/{{ item }}/override_var/{{ servicename }}.properties"
-      with_items: "{{ myenv }}"
+        dest:  "{{ target }}/{{ item.name }}/override_var/{{ servicename }}.properties"
+      with_items: "{{ environments }}"
       
     - name: create folders for Environment
       file: 
-        path: "{{ workdir }}/../../{{ servicename }}/app"
+        path: "{{ target }}/../../{{ servicename }}/app"
         state: directory
         mode: 0755
     
     - name: Copy deployment.json
       template: 
         src: deployment.json.j2 
-        dest:  "/demo/deployment_config/{{ servicename }}/app/deployment.json"
+        dest:  "/{{ target }}/../../{{ servicename }}/app/deployment.json"
       
     - name: Copy service.json
       template: 
         src: service.json.j2
-        dest:  "/demo/deployment_config/{{ servicename }}/app/service.json"
+        dest:  "/{{ target }}/../../{{ servicename }}/app/service.json"
